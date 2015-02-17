@@ -23,7 +23,7 @@ def determine_number_of_hosts(environment_yml):
 
 
 environment_decriptor = os.getenv('TOPOLOGY')
-os.getenv('NUM_HOSTS', determine_number_of_hosts())
+os.getenv('NUM_HOSTS', determine_number_of_hosts(environment_decriptor))
 
 topo_dict = yaml.load(open(environment_decriptor).read())
 
