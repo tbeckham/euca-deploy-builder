@@ -73,7 +73,7 @@ eucalyptus = {"default-img-url": "http://images.walrus.cloud.qa1.eucalyptus-syst
 
 default["default_attributes"] = {"eucalyptus": eucalyptus}
 
-repostitory_mapping = {'testing': {
+repository_mapping = {'testing': {
     'eucalyptus-repo': 'http://packages.release.eucalyptus-systems.com/yum/tags/eucalyptus-devel/centos/6/x86_64/',
     'enterprise-repo': 'http://packages.release.eucalyptus-systems.com/yum/tags/enterprise-devel/centos/6/x86_64/',
     'euca2ools-repo': 'http://packages.release.eucalyptus-systems.com/yum/tags/euca2ools-devel/centos/6/x86_64/'},
@@ -86,7 +86,7 @@ repostitory_mapping = {'testing': {
                            'enterprise-repo': 'http://packages.release.eucalyptus-systems.com/yum/tags/enterprise-4.1/centos/6/x86_64/',
                            'euca2ools-repo': 'http://packages.release.eucalyptus-systems.com/yum/tags/euca2ools-3.2/centos/6/x86_64/'}
 }
-default = dict(default.items() + repostitory_mapping[euca_source].items())
+default = dict(default.items() + repository_mapping[euca_source].items())
 
 # Setup networking
 if 'EDGE' == network_mode:
