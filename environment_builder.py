@@ -34,6 +34,7 @@ user_dict = yaml.load(open(client_file).read())
 #simulate jenkins env vars
 euca_source = "testing"
 
+
 def write_json_environment():
     environment_dict = yaml.load(open(environment_file).read())
     filename = 'environment.json'
@@ -41,6 +42,7 @@ def write_json_environment():
         env_json.write(json.dumps(environment_dict, indent=4,
                                   sort_keys=True, separators=(',', ': ')))
     return
+
 
 def merge(user, default):
     if isinstance(user,dict) and isinstance(default,dict):
