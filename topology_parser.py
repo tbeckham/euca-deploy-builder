@@ -77,6 +77,7 @@ def create_client_topology():
     :return:
     """
     nodes = {}
+    node_ip = 0
     for machine in get_topology():
         for component in machine.get('cloud-components'):
             if component == 'clc':
@@ -90,23 +91,42 @@ def create_client_topology():
             elif component == 'ufs':
                 topology['user-facing'] = [machine.get('public-ip')]
             elif component == 'nc':
-                if not is_attribute_declared(key="clusters", some_dict=topology):
-                    nodes[machine.get('cluster-name')] = [machine.get('public-ip')]
-                    topology['clusters'] = {machine.get('cluster-name'): {}}
-                    topology['clusters'][machine.get('cluster-name')]['nodes'] = " ".join(nodes[machine.get('cluster-name')])
-                elif machine.get('cluster-name') in topology['clusters'].keys():
-                    if not is_attribute_declared(key=machine.get('cluster-name'), some_dict=nodes):
+                if is_attribute_declared(key="public-ip", some_dict=machine):
+                    if not is_attribute_declared(key="clusters", some_dict=topology):
                         nodes[machine.get('cluster-name')] = [machine.get('public-ip')]
+                        topology['clusters'] = {machine.get('cluster-name'): {}}
+                        topology['clusters'][machine.get('cluster-name')]['nodes'] = " ".join(nodes[machine.get('cluster-name')])
+                    elif machine.get('cluster-name') in topology['clusters'].keys():
+                        if not is_attribute_declared(key=machine.get('cluster-name'), some_dict=nodes):
+                            nodes[machine.get('cluster-name')] = [machine.get('public-ip')]
+                        else:
+                            nodes[machine.get('cluster-name')].append(machine.get('public-ip'))
+                        topology['clusters'][machine.get('cluster-name')]['nodes'] = " ".join(nodes[machine.get('cluster-name')])
                     else:
-                        nodes[machine.get('cluster-name')].append(machine.get('public-ip'))
-                    topology['clusters'][machine.get('cluster-name')]['nodes'] = " ".join(nodes[machine.get('cluster-name')])
+                        if not is_attribute_declared(key=machine.get('cluster-name'), some_dict=nodes):
+                            nodes[machine.get('cluster-name')] = [machine.get('public-ip')]
+                        else:
+                            nodes[machine.get('cluster-name')].append(machine.get('public-ip'))
+                        topology['clusters'][machine.get('cluster-name')] = {}
+                        topology['clusters'][machine.get('cluster-name')]['nodes'] = " ".join(nodes[machine.get('cluster-name')])
                 else:
-                    if not is_attribute_declared(key=machine.get('cluster-name'), some_dict=nodes):
-                        nodes[machine.get('cluster-name')] = [machine.get('public-ip')]
+                    if not is_attribute_declared(key="clusters", some_dict=topology):
+                        nodes[machine.get('cluster-name')] = ["a_node"]
+                        topology['clusters'] = {machine.get('cluster-name'): {}}
+                        topology['clusters'][machine.get('cluster-name')]['nodes'] = " ".join(nodes[machine.get('cluster-name')])
+                    elif machine.get('cluster-name') in topology['clusters'].keys():
+                        if not is_attribute_declared(key=machine.get('cluster-name'), some_dict=nodes):
+                            nodes[machine.get('cluster-name')] = ["a_node"]
+                        else:
+                            nodes[machine.get('cluster-name')].append("a_node")
+                        topology['clusters'][machine.get('cluster-name')]['nodes'] = " ".join(nodes[machine.get('cluster-name')])
                     else:
-                        nodes[machine.get('cluster-name')].append(machine.get('public-ip'))
-                    topology['clusters'][machine.get('cluster-name')] = {}
-                    topology['clusters'][machine.get('cluster-name')]['nodes'] = " ".join(nodes[machine.get('cluster-name')])
+                        if not is_attribute_declared(key=machine.get('cluster-name'), some_dict=nodes):
+                            nodes[machine.get('cluster-name')] = ["a_node"]
+                        else:
+                            nodes[machine.get('cluster-name')].append("a_node")
+                        topology['clusters'][machine.get('cluster-name')] = {}
+                        topology['clusters'][machine.get('cluster-name')]['nodes'] = " ".join(nodes[machine.get('cluster-name')])
     return
 
 
