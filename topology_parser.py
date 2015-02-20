@@ -6,9 +6,8 @@ import os
 import yaml
 
 environment_descriptor = os.getenv('TOPOLOGY')
-job_id = os.getenv('JOB_ID')
 topo_dict = yaml.load(environment_descriptor)
-client_dict = {'name': job_id, "default_attributes": {"eucalyptus": {}}}
+client_dict = {"default_attributes": {"eucalyptus": {}}}
 topology = {}
 
 
@@ -45,7 +44,7 @@ def is_attribute_declared(key, some_dict):
         return False
 
 
-def check_cluster_definition(machine, component):
+def check_cluster_definition(machine, component, count):
     """
     Three scenarios can exist here:
      1) No cluster definition in topology
@@ -56,20 +55,34 @@ def check_cluster_definition(machine, component):
      - update dict
     :param machine: dict of machine description
     :param component: cc-1 or sc-1
+    :param count: machine number
     :return:
     """
     if not is_attribute_declared(key="clusters", some_dict=topology):
         topology['clusters'] = {machine.get('cluster-name'): {}}
-        topology['clusters'][machine.get('cluster-name')][component] = machine.get('public-ip')
+        topology['clusters'][machine.get('cluster-name')][component] = get_component_ip(machine, count)
     elif machine.get('cluster-name') in topology['clusters'].keys():
-        topology['clusters'][machine.get('cluster-name')][component] = machine.get('public-ip')
+        topology['clusters'][machine.get('cluster-name')][component] = get_component_ip(machine, count)
     else:
         topology['clusters'][machine.get('cluster-name')] = {}
-        topology['clusters'][machine.get('cluster-name')][component] = machine.get('public-ip')
+        topology['clusters'][machine.get('cluster-name')][component] = get_component_ip(machine, count)
     return
 
 
-def create_client_topology():
+def get_component_ip(machine_dict, count):
+    """
+    Get ip from machine dict. If an IP is not declared return a string
+
+    :param machine_dict:
+    :return: the IP found or "a_node"
+    """
+    if is_attribute_declared(key='public-ip', some_dict=machine_dict):
+        return machine_dict.get('public-ip')
+    else:
+        return "MACHINE_" + str(count)
+
+
+def parse_client_topology():
     """
     This will parse the client topology description and build out a euca-deploy compatible yaml for components with
      known IPs.
@@ -77,56 +90,38 @@ def create_client_topology():
     :return:
     """
     nodes = {}
-    node_ip = 0
+    count = 0
     for machine in get_topology():
+        count += 1
         for component in machine.get('cloud-components'):
             if component == 'clc':
-                topology['clc-1'] = machine.get('public-ip')
+                topology['clc-1'] = get_component_ip(machine, count)
             elif component == 'cc':
-                check_cluster_definition(machine=machine, component='cc-1')
+                check_cluster_definition(machine=machine, component='cc-1', count=count)
             elif component == 'sc':
-                check_cluster_definition(machine=machine, component='sc-1')
+                check_cluster_definition(machine=machine, component='sc-1', count=count)
             elif component == 'walrus':
-                topology['walrus'] = machine.get('public-ip')
+                topology['walrus'] = get_component_ip(machine, count)
             elif component == 'ufs':
-                topology['user-facing'] = [machine.get('public-ip')]
+                topology['user-facing'] = [get_component_ip(machine, count)]
             elif component == 'nc':
-                if is_attribute_declared(key="public-ip", some_dict=machine):
-                    if not is_attribute_declared(key="clusters", some_dict=topology):
-                        nodes[machine.get('cluster-name')] = [machine.get('public-ip')]
-                        topology['clusters'] = {machine.get('cluster-name'): {}}
-                        topology['clusters'][machine.get('cluster-name')]['nodes'] = " ".join(nodes[machine.get('cluster-name')])
-                    elif machine.get('cluster-name') in topology['clusters'].keys():
-                        if not is_attribute_declared(key=machine.get('cluster-name'), some_dict=nodes):
-                            nodes[machine.get('cluster-name')] = [machine.get('public-ip')]
-                        else:
-                            nodes[machine.get('cluster-name')].append(machine.get('public-ip'))
-                        topology['clusters'][machine.get('cluster-name')]['nodes'] = " ".join(nodes[machine.get('cluster-name')])
+                if not is_attribute_declared(key="clusters", some_dict=topology):
+                    nodes[machine.get('cluster-name')] = [get_component_ip(machine, count)]
+                    topology['clusters'] = {machine.get('cluster-name'): {}}
+                    topology['clusters'][machine.get('cluster-name')]['nodes'] = " ".join(nodes[machine.get('cluster-name')])
+                elif machine.get('cluster-name') in topology['clusters'].keys():
+                    if not is_attribute_declared(key=machine.get('cluster-name'), some_dict=nodes):
+                        nodes[machine.get('cluster-name')] = [get_component_ip(machine, count)]
                     else:
-                        if not is_attribute_declared(key=machine.get('cluster-name'), some_dict=nodes):
-                            nodes[machine.get('cluster-name')] = [machine.get('public-ip')]
-                        else:
-                            nodes[machine.get('cluster-name')].append(machine.get('public-ip'))
-                        topology['clusters'][machine.get('cluster-name')] = {}
-                        topology['clusters'][machine.get('cluster-name')]['nodes'] = " ".join(nodes[machine.get('cluster-name')])
+                        nodes[machine.get('cluster-name')].append(machine.get('public-ip'))
+                    topology['clusters'][machine.get('cluster-name')]['nodes'] = " ".join(nodes[machine.get('cluster-name')])
                 else:
-                    if not is_attribute_declared(key="clusters", some_dict=topology):
-                        nodes[machine.get('cluster-name')] = ["a_node"]
-                        topology['clusters'] = {machine.get('cluster-name'): {}}
-                        topology['clusters'][machine.get('cluster-name')]['nodes'] = " ".join(nodes[machine.get('cluster-name')])
-                    elif machine.get('cluster-name') in topology['clusters'].keys():
-                        if not is_attribute_declared(key=machine.get('cluster-name'), some_dict=nodes):
-                            nodes[machine.get('cluster-name')] = ["a_node"]
-                        else:
-                            nodes[machine.get('cluster-name')].append("a_node")
-                        topology['clusters'][machine.get('cluster-name')]['nodes'] = " ".join(nodes[machine.get('cluster-name')])
+                    if not is_attribute_declared(key=machine.get('cluster-name'), some_dict=nodes):
+                        nodes[machine.get('cluster-name')] = [get_component_ip(machine, count)]
                     else:
-                        if not is_attribute_declared(key=machine.get('cluster-name'), some_dict=nodes):
-                            nodes[machine.get('cluster-name')] = ["a_node"]
-                        else:
-                            nodes[machine.get('cluster-name')].append("a_node")
-                        topology['clusters'][machine.get('cluster-name')] = {}
-                        topology['clusters'][machine.get('cluster-name')]['nodes'] = " ".join(nodes[machine.get('cluster-name')])
+                        nodes[machine.get('cluster-name')].append(get_component_ip(machine, count))
+                    topology['clusters'][machine.get('cluster-name')] = {}
+                    topology['clusters'][machine.get('cluster-name')]['nodes'] = " ".join(nodes[machine.get('cluster-name')])
     return
 
 
@@ -135,7 +130,14 @@ def create_client_yml(in_dict, out_file):
     f.write(yaml.dump(in_dict))
     f.close()
 
-# populate known information and write to file to be consumed by environment builder
-create_client_topology()
-client_dict["default_attributes"] = {"eucalyptus": {"topology": topology}}
-create_client_yml(in_dict=client_dict, out_file='client.yml')
+
+def create_client_topology():
+    """
+    populate client information and write to file to be consumed by environment builder
+
+    :return:
+    """
+    parse_client_topology()
+    client_dict["default_attributes"] = {"eucalyptus": {"topology": topology}}
+    create_client_yml(in_dict=client_dict, out_file='client.yml')
+    return
