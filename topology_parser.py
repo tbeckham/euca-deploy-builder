@@ -92,7 +92,8 @@ def parse_client_topology():
     nodes = {}
     count = 0
     for machine in get_topology():
-        count += 1
+        if not is_attribute_declared(key='public-ip', some_dict=machine):
+            count += 1
         for component in machine.get('cloud-components'):
             if component == 'clc':
                 topology['clc-1'] = get_component_ip(machine, count)
@@ -103,7 +104,10 @@ def parse_client_topology():
             elif component == 'walrus':
                 topology['walrus'] = get_component_ip(machine, count)
             elif component == 'ufs':
-                topology['user-facing'] = [get_component_ip(machine, count)]
+                if is_attribute_declared(key="user-facing", some_dict=topology):
+                    topology['user-facing'].append(get_component_ip(machine, count))
+                else:
+                    topology['user-facing'] = [get_component_ip(machine, count)]
             elif component == 'nc':
                 if not is_attribute_declared(key="clusters", some_dict=topology):
                     nodes[machine.get('cluster-name')] = [get_component_ip(machine, count)]
@@ -113,7 +117,7 @@ def parse_client_topology():
                     if not is_attribute_declared(key=machine.get('cluster-name'), some_dict=nodes):
                         nodes[machine.get('cluster-name')] = [get_component_ip(machine, count)]
                     else:
-                        nodes[machine.get('cluster-name')].append(machine.get('public-ip'))
+                        nodes[machine.get('cluster-name')].append(get_component_ip(machine, count))
                     topology['clusters'][machine.get('cluster-name')]['nodes'] = " ".join(nodes[machine.get('cluster-name')])
                 else:
                     if not is_attribute_declared(key=machine.get('cluster-name'), some_dict=nodes):
