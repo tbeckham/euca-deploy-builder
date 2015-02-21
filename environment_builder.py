@@ -207,6 +207,9 @@ set_component_ip_info(topo_d)
 
 # Setup networking
 if 'EDGE' == network_mode:
+    parsed_public_ips = public_ips.replace(" ", "").split(',')
+    edge_pubs = parsed_public_ips[0:len(parsed_public_ips) / 2]
+    edge_priv = parsed_public_ips[len(parsed_public_ips) / 2:len(parsed_public_ips)]
     config_json = {"InstanceDnsServers": [get_component_ip(component="clc-1", some_dict=topo_d)],
                    "Clusters": [{"Subnet": {"Subnet": "10.111.0.0",
                                             "Netmask": "255.255.0.0",
