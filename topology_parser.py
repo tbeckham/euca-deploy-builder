@@ -129,6 +129,20 @@ def parse_client_topology():
     return
 
 
+def search(k, d):
+    """
+    Used for testing. search list of dicts for a value
+    TODO: remove for production
+
+    :param k: key to search for
+    :param d: a list of dicts
+    :return:
+    """
+    for item in d:
+        if k in item:
+            return item[k]
+    return
+
 def create_client_yml(in_dict, out_file):
     f = open(out_file, 'w')
     f.write(yaml.dump(in_dict))

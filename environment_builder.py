@@ -16,7 +16,6 @@ Jenkins ENV Vars
 job_id = os.getenv('JOB_ID')
 print "DEPLOY JOB ID IS: " + job_id
 install_type = os.getenv('SOURCE_OR_PACAKGE_BUILD')
-frontend = os.getenv('MACHINE_1')
 public_ips = os.getenv('PUBLIC_IPS')
 euca_source = os.getenv('EUCA_SOURCE')
 private_ips = os.getenv('PRIVATE_IPS')
@@ -31,6 +30,7 @@ object_storage_mode = os.getenv('OBJECT_STORAGE')
 global vars
 '''
 default_cluster_name = "one"
+parsed_cluster_name = topology_parser.search("cluster-name", topology_parser.get_topology())
 client_file = "client.yml"
 environment_file = "environment.yml"
 user_dict = yaml.load(open(client_file).read())
@@ -150,8 +150,42 @@ eucalyptus = {
     "yum-options": "--nogpg",
     "system-properties": {'cloudformation.url_domain_whitelist': '*s3.amazonaws.com,*qa1.eucalyptus-systems.com'}
 }
-
 default["default_attributes"] = {"eucalyptus": eucalyptus}
+
+storage_property_prefix = parsed_cluster_name + '.storage.'
+if block_storage_mode == 'emc-vnx':
+    eucalyptus['system-properties'][storage_property_prefix + 'chapuser'] = 'euca-one'
+    eucalyptus['system-properties'][storage_property_prefix + 'ncpaths'] = '10.107.5.1'
+    eucalyptus['system-properties'][storage_property_prefix + 'sanhost'] = '10.109.5.1'
+    eucalyptus['system-properties'][storage_property_prefix + 'sanpassword'] = 'rdc4msl'
+    eucalyptus['system-properties'][storage_property_prefix + 'sanuser'] = 'gadmin'
+    eucalyptus['system-properties'][storage_property_prefix + 'scpaths'] = '10.107.5.1'
+    eucalyptus['system-properties'][storage_property_prefix + 'storagepool'] = '0'
+    eucalyptus['system-properties'][storage_property_prefix + 'clipath'] = '/opt/Navisphere/bin/naviseccli'
+elif block_storage_mode == 'netapp':
+    eucalyptus['system-properties'][storage_property_prefix + 'chapuser'] = 'euca-one'
+    eucalyptus['system-properties'][storage_property_prefix + 'ncpaths'] = '10.107.2.1'
+    eucalyptus['system-properties'][storage_property_prefix + 'sanhost'] = '10.109.2.1'
+    eucalyptus['system-properties'][storage_property_prefix + 'sanpassword'] = 'zoomzoom'
+    eucalyptus['system-properties'][storage_property_prefix + 'sanuser'] = 'root'
+    eucalyptus['system-properties'][storage_property_prefix + 'scpaths'] = '10.107.2.1'
+elif block_storage_mode == 'netapp-cmode':
+    # Cluster mode is the only mode that is differentiated in Jenkins but not in euca
+    topo_d['topology']['clusters'][parsed_cluster_name]['storage-backend'] = 'netapp'
+    eucalyptus['system-properties'][storage_property_prefix + 'vservername'] = 'euca-vserver'
+    eucalyptus['system-properties'][storage_property_prefix + 'chapuser'] = 'euca-one'
+    eucalyptus['system-properties'][storage_property_prefix + 'ncpaths'] = '10.107.1.1'
+    eucalyptus['system-properties'][storage_property_prefix + 'sanhost'] = '10.109.1.26'
+    eucalyptus['system-properties'][storage_property_prefix + 'sanpassword'] = 'netapp123'
+    eucalyptus['system-properties'][storage_property_prefix + 'sanuser'] = 'vsadmin'
+    eucalyptus['system-properties'][storage_property_prefix + 'scpaths'] = '10.107.1.1'
+elif block_storage_mode == 'equallogic':
+    eucalyptus['system-properties'][storage_property_prefix + 'chapuser'] = 'euca-one'
+    eucalyptus['system-properties'][storage_property_prefix + 'ncpaths'] = '10.107.6.1'
+    eucalyptus['system-properties'][storage_property_prefix + 'sanhost'] = '10.109.6.1'
+    eucalyptus['system-properties'][storage_property_prefix + 'sanpassword'] = 'zoomzoom'
+    eucalyptus['system-properties'][storage_property_prefix + 'sanuser'] = 'grpadmin'
+    eucalyptus['system-properties'][storage_property_prefix + 'scpaths'] = '10.107.6.1'
 
 repository_mapping = {'testing': {
     'eucalyptus-repo': 'http://packages.release.eucalyptus-systems.com/yum/tags/eucalyptus-devel/centos/6/x86_64/',
@@ -168,9 +202,6 @@ repository_mapping = {'testing': {
 }
 eucalyptus.update(repository_mapping[euca_source])
 
-### create client topology from client yaml
-topology_parser.create_client_topology()
-
 ### set all the IP info
 set_component_ip_info(topo_d)
 
@@ -181,17 +212,25 @@ if 'EDGE' == network_mode:
                                             "Netmask": "255.255.0.0",
                                             "Name": "10.111.0.0",
                                             "Gateway": "10.111.0.1"},
-                                 "PrivateIps": "edge_priv",
-                                 "Name": default_cluster_name}],
-                   "PublicIps": "edge_pubs"}
+                                 "PrivateIps": edge_priv,
+                                 "Name": parsed_cluster_name}],
+                   "PublicIps": edge_pubs}
     eucalyptus['network']['nc-router'] = 'N'
     eucalyptus['network']['config-json'] = config_json
+else:
+    ### Managed, Managed-No-VLAN
+    eucalyptus['network']['public-interface'] = 'em1'
+    eucalyptus['network']['private-interface'] = 'em1'
+    eucalyptus['network']['public-ips'] = public_ips
+    if network_mode == 'MANAGED':
+        eucalyptus['system-properties']['cloud.network.global_min_network_tag'] = "512"
+        eucalyptus['system-properties']['cloud.network.global_max_network_tag'] = "639"
 
 ### output env to console
 print "Generated Environment\n"
-print "\n", yaml.dump(merge(user_dict, default), default_flow_style=False)
+print yaml.dump(merge(user_dict, default), default_flow_style=False)
+
 
 ### write generated euca-deploy yaml to file
 write_environment_to_file(yaml_dump=yaml.dump(merge(user_dict, default), default_flow_style=False),
                           outfile=environment_file)
-
