@@ -93,8 +93,8 @@ def set_component_ip_info(some_dict):
                 node_list = v.split(" ")
                 for i in node_list:
                     if not is_ip(i):
-                        new_value = i.replace(i, os.getenv(i, "MACHINE"))
-                        some_dict[k] = new_value
+                        node_list[node_list.index(i)] = os.getenv(i, "MACHINE")
+                        some_dict[k] = ' '.join(node_list)
             elif isinstance(v, list):
                 for i in v:
                     if not is_ip(i):
