@@ -5,29 +5,7 @@
 import os
 import yaml
 
-# environment_descriptor = os.getenv('TOPOLOGY')
-environment_descriptor ='''
-version: 4.1
-machine-topology:
-  - cloud-components:
-    - clc
-    - walrus
-    - ufs
-    public-ip: 10.0.1.51
-  - cloud-components:
-    - cc
-    - sc
-    cluster-name: one
-    public-ip: 10.0.1.52
-  - cloud-components:
-    - nc
-    cluster-name: one
-    public-ip: 10.0.1.53
-  - cloud-components:
-    - nc
-    cluster-name: one
-    public-ip: 10.0.1.54
-'''
+environment_descriptor = os.getenv('TOPOLOGY')
 topo_dict = yaml.load(environment_descriptor)
 client_dict = {"default_attributes": {"eucalyptus": {}}}
 topology = {}
