@@ -89,21 +89,22 @@ def set_component_ip_info(some_dict):
         if isinstance(v, dict):
             set_component_ip_info(v)
         else:
-            if k == "nodes":
-                node_list = v.split(" ")
-                for i in node_list:
-                    if not is_ip(i):
-                        node_list[node_list.index(i)] = os.getenv(i, "MACHINE")
-                        some_dict[k] = ' '.join(node_list)
-            elif isinstance(v, list):
-                for i in v:
-                    if not is_ip(i):
-                        new_value = i.replace(i, os.getenv(i, "MACHINE"))
-                        some_dict[k][v.index(i)] = new_value
-            else:
-                if not is_ip(v):
-                    new_value = v.replace(v, os.getenv(v, "MACHINE"))
-                    some_dict[k] = new_value
+            if (k != "storage-backend") and (k != "das-device"):
+                if k == "nodes":
+                    node_list = v.split(" ")
+                    for i in node_list:
+                        if not is_ip(i):
+                            node_list[node_list.index(i)] = os.getenv(i, "MACHINE")
+                            some_dict[k] = ' '.join(node_list)
+                elif isinstance(v, list):
+                    for i in v:
+                        if not is_ip(i):
+                            new_value = i.replace(i, os.getenv(i, "MACHINE"))
+                            some_dict[k][v.index(i)] = new_value
+                else:
+                    if not is_ip(v):
+                        new_value = v.replace(v, os.getenv(v, "MACHINE"))
+                        some_dict[k] = new_value
     return
 
 
@@ -135,6 +136,8 @@ default = {'description': 'Eucalyptus CI Testing',
 
 # Initialize eucalyptus config hash with defaults
 eucalyptus = {
+    'install-type': install_type,
+    'source-branch': source_branch,
     "default-img-url": "http://images.walrus.cloud.qa1.eucalyptus-systems.com:8773/precise-server-cloudimg-amd64-disk1.img",
     'install-load-balancer': 'true',
     'install-imaging-worker': 'true',
@@ -152,40 +155,47 @@ eucalyptus = {
 }
 default["default_attributes"] = {"eucalyptus": eucalyptus}
 
-storage_property_prefix = parsed_cluster_name + '.storage.'
-if block_storage_mode == 'emc-vnx':
-    eucalyptus['system-properties'][storage_property_prefix + 'chapuser'] = 'euca-one'
-    eucalyptus['system-properties'][storage_property_prefix + 'ncpaths'] = '10.107.5.1'
-    eucalyptus['system-properties'][storage_property_prefix + 'sanhost'] = '10.109.5.1'
-    eucalyptus['system-properties'][storage_property_prefix + 'sanpassword'] = 'rdc4msl'
-    eucalyptus['system-properties'][storage_property_prefix + 'sanuser'] = 'gadmin'
-    eucalyptus['system-properties'][storage_property_prefix + 'scpaths'] = '10.107.5.1'
-    eucalyptus['system-properties'][storage_property_prefix + 'storagepool'] = '0'
-    eucalyptus['system-properties'][storage_property_prefix + 'clipath'] = '/opt/Navisphere/bin/naviseccli'
-elif block_storage_mode == 'netapp':
-    eucalyptus['system-properties'][storage_property_prefix + 'chapuser'] = 'euca-one'
-    eucalyptus['system-properties'][storage_property_prefix + 'ncpaths'] = '10.107.2.1'
-    eucalyptus['system-properties'][storage_property_prefix + 'sanhost'] = '10.109.2.1'
-    eucalyptus['system-properties'][storage_property_prefix + 'sanpassword'] = 'zoomzoom'
-    eucalyptus['system-properties'][storage_property_prefix + 'sanuser'] = 'root'
-    eucalyptus['system-properties'][storage_property_prefix + 'scpaths'] = '10.107.2.1'
-elif block_storage_mode == 'netapp-cmode':
-    # Cluster mode is the only mode that is differentiated in Jenkins but not in euca
-    topo_d['topology']['clusters'][parsed_cluster_name]['storage-backend'] = 'netapp'
-    eucalyptus['system-properties'][storage_property_prefix + 'vservername'] = 'euca-vserver'
-    eucalyptus['system-properties'][storage_property_prefix + 'chapuser'] = 'euca-one'
-    eucalyptus['system-properties'][storage_property_prefix + 'ncpaths'] = '10.107.1.1'
-    eucalyptus['system-properties'][storage_property_prefix + 'sanhost'] = '10.109.1.26'
-    eucalyptus['system-properties'][storage_property_prefix + 'sanpassword'] = 'netapp123'
-    eucalyptus['system-properties'][storage_property_prefix + 'sanuser'] = 'vsadmin'
-    eucalyptus['system-properties'][storage_property_prefix + 'scpaths'] = '10.107.1.1'
-elif block_storage_mode == 'equallogic':
-    eucalyptus['system-properties'][storage_property_prefix + 'chapuser'] = 'euca-one'
-    eucalyptus['system-properties'][storage_property_prefix + 'ncpaths'] = '10.107.6.1'
-    eucalyptus['system-properties'][storage_property_prefix + 'sanhost'] = '10.109.6.1'
-    eucalyptus['system-properties'][storage_property_prefix + 'sanpassword'] = 'zoomzoom'
-    eucalyptus['system-properties'][storage_property_prefix + 'sanuser'] = 'grpadmin'
-    eucalyptus['system-properties'][storage_property_prefix + 'scpaths'] = '10.107.6.1'
+for cluster_name in topology_parser.get_cluster_names():
+    storage_property_prefix = cluster_name + '.storage.'
+    if block_storage_mode == 'emc-vnx':
+        topo_d['topology']['clusters'][cluster_name]['storage-backend'] = 'emc-vnx'
+        eucalyptus['system-properties'][storage_property_prefix + 'chapuser'] = 'euca-one'
+        eucalyptus['system-properties'][storage_property_prefix + 'ncpaths'] = '10.107.5.1'
+        eucalyptus['system-properties'][storage_property_prefix + 'sanhost'] = '10.109.5.1'
+        eucalyptus['system-properties'][storage_property_prefix + 'sanpassword'] = 'rdc4msl'
+        eucalyptus['system-properties'][storage_property_prefix + 'sanuser'] = 'gadmin'
+        eucalyptus['system-properties'][storage_property_prefix + 'scpaths'] = '10.107.5.1'
+        eucalyptus['system-properties'][storage_property_prefix + 'storagepool'] = '0'
+        eucalyptus['system-properties'][storage_property_prefix + 'clipath'] = '/opt/Navisphere/bin/naviseccli'
+    elif block_storage_mode == 'netapp':
+        topo_d['topology']['clusters'][cluster_name]['storage-backend'] = 'netapp'
+        eucalyptus['system-properties'][storage_property_prefix + 'chapuser'] = 'euca-one'
+        eucalyptus['system-properties'][storage_property_prefix + 'ncpaths'] = '10.107.2.1'
+        eucalyptus['system-properties'][storage_property_prefix + 'sanhost'] = '10.109.2.1'
+        eucalyptus['system-properties'][storage_property_prefix + 'sanpassword'] = 'zoomzoom'
+        eucalyptus['system-properties'][storage_property_prefix + 'sanuser'] = 'root'
+        eucalyptus['system-properties'][storage_property_prefix + 'scpaths'] = '10.107.2.1'
+    elif block_storage_mode == 'netapp-cmode':
+        topo_d['topology']['clusters'][cluster_name]['storage-backend'] = 'netapp'
+        eucalyptus['system-properties'][storage_property_prefix + 'vservername'] = 'euca-vserver'
+        eucalyptus['system-properties'][storage_property_prefix + 'chapuser'] = 'euca-one'
+        eucalyptus['system-properties'][storage_property_prefix + 'ncpaths'] = '10.107.1.1'
+        eucalyptus['system-properties'][storage_property_prefix + 'sanhost'] = '10.109.1.26'
+        eucalyptus['system-properties'][storage_property_prefix + 'sanpassword'] = 'netapp123'
+        eucalyptus['system-properties'][storage_property_prefix + 'sanuser'] = 'vsadmin'
+        eucalyptus['system-properties'][storage_property_prefix + 'scpaths'] = '10.107.1.1'
+    elif block_storage_mode == 'equallogic':
+        topo_d['topology']['clusters'][cluster_name]['storage-backend'] = 'equallogic'
+        eucalyptus['system-properties'][storage_property_prefix + 'chapuser'] = 'euca-one'
+        eucalyptus['system-properties'][storage_property_prefix + 'ncpaths'] = '10.107.6.1'
+        eucalyptus['system-properties'][storage_property_prefix + 'sanhost'] = '10.109.6.1'
+        eucalyptus['system-properties'][storage_property_prefix + 'sanpassword'] = 'zoomzoom'
+        eucalyptus['system-properties'][storage_property_prefix + 'sanuser'] = 'grpadmin'
+        eucalyptus['system-properties'][storage_property_prefix + 'scpaths'] = '10.107.6.1'
+    else:
+        topo_d['topology']['clusters'][cluster_name]['storage-backend'] = 'das'
+        topo_d['topology']['clusters'][cluster_name]['das-device'] = 'vg01'
+
 
 repository_mapping = {'testing': {
     'eucalyptus-repo': 'http://packages.release.eucalyptus-systems.com/yum/tags/eucalyptus-devel/centos/6/x86_64/',

@@ -153,6 +153,7 @@ def get_cluster_names():
 
     return clusters
 
+
 def create_client_yml(in_dict, out_file):
     f = open(out_file, 'w')
     f.write(yaml.dump(in_dict))
