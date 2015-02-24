@@ -211,13 +211,16 @@ if 'EDGE' == network_mode:
     edge_pubs = parsed_public_ips[0:len(parsed_public_ips) / 2]
     edge_priv = parsed_public_ips[len(parsed_public_ips) / 2:len(parsed_public_ips)]
     config_json = {"InstanceDnsServers": [get_component_ip(component="clc-1", some_dict=topo_d)],
-                   "Clusters": [{"Subnet": {"Subnet": "10.111.0.0",
+                   "Clusters": [],
+                   "PublicIps": edge_pubs}
+    for cluster in topology_parser.get_cluster_names():
+        cluster_def = {"Subnet": {"Subnet": "10.111.0.0",
                                             "Netmask": "255.255.0.0",
                                             "Name": "10.111.0.0",
                                             "Gateway": "10.111.0.1"},
-                                 "PrivateIps": edge_priv,
-                                 "Name": parsed_cluster_name}],
-                   "PublicIps": edge_pubs}
+                       "PrivateIps": edge_priv,
+                       "Name": cluster}
+        config_json["Clusters"].append(cluster_def)
     eucalyptus['network']['nc-router'] = 'N'
     eucalyptus['network']['config-json'] = config_json
 else:
@@ -232,7 +235,6 @@ else:
 ### output env to console
 print "Generated Environment\n"
 print yaml.dump(merge(user_dict, default), default_flow_style=False)
-
 
 ### write generated euca-deploy yaml to file
 write_environment_to_file(yaml_dump=yaml.dump(merge(user_dict, default), default_flow_style=False),

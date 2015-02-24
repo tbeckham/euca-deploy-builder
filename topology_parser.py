@@ -143,6 +143,16 @@ def search(k, d):
             return item[k]
     return
 
+
+def get_cluster_names():
+    clusters = []
+    for machine in get_topology():
+        if "cluster-name" in machine.keys():
+            if machine["cluster-name"] not in clusters:
+                clusters.append( machine["cluster-name"])
+
+    return clusters
+
 def create_client_yml(in_dict, out_file):
     f = open(out_file, 'w')
     f.write(yaml.dump(in_dict))
