@@ -3,7 +3,6 @@
 # Author: Tony Beckham tony.beckham@hp.com
 #
 
-import json
 import os
 import yaml
 import topology_parser
@@ -35,15 +34,6 @@ client_file = "client.yml"
 environment_file = "environment.yml"
 user_dict = yaml.load(open(client_file).read())
 topo_d = user_dict['default_attributes']['eucalyptus']
-
-
-def write_json_environment():
-    environment_dict = yaml.load(open(environment_file).read())
-    filename = 'environment.json'
-    with open(filename, 'w') as env_json:
-        env_json.write(json.dumps(environment_dict, indent=4,
-                                  sort_keys=True, separators=(',', ': ')))
-    return
 
 
 def merge(user, default):
@@ -235,6 +225,7 @@ if 'EDGE' == network_mode:
     eucalyptus['network']['config-json'] = config_json
 else:
     ### Managed, Managed-No-VLAN
+    eucalyptus['network']['mode'] = network_mode
     eucalyptus['network']['public-interface'] = 'em1'
     eucalyptus['network']['private-interface'] = 'em1'
     eucalyptus['network']['public-ips'] = public_ips
