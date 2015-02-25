@@ -119,6 +119,7 @@ def write_environment_to_file(yaml_dump, outfile):
     f.write(yaml_dump)
     f.close()
 
+
 default = {'description': 'Eucalyptus CI Testing',
            'thrift': {'version': '0.9.1'},
            'name': job_id,
@@ -128,7 +129,8 @@ default = {'description': 'Eucalyptus CI Testing',
 eucalyptus = {
     'install-type': install_type,
     'source-branch': source_branch,
-    "default-img-url": "http://images.walrus.cloud.qa1.eucalyptus-systems.com:8773/precise-server-cloudimg-amd64-disk1.img",
+    "default-img-url":
+        "http://images.walrus.cloud.qa1.eucalyptus-systems.com:8773/precise-server-cloudimg-amd64-disk1.img",
     'install-load-balancer': 'true',
     'install-imaging-worker': 'true',
     'network': {'mode': "EDGE",
@@ -138,7 +140,8 @@ eucalyptus = {
                 'bridged-nic': 'em1'},
     'nc': {"max-cores": 32},
     "source-repo": "ssh://repo-euca@git.eucalyptus-systems.com/internal",
-    "init-script-url": "http://git.qa1.eucalyptus-systems.com/qa-repos/eucalele/raw/master/scripts/network-interfaces.sh",
+    "init-script-url":
+        "http://git.qa1.eucalyptus-systems.com/qa-repos/eucalele/raw/master/scripts/network-interfaces.sh",
     "log-level": "DEBUG",
     "yum-options": "--nogpg",
     "system-properties": {'cloudformation.url_domain_whitelist': '*s3.amazonaws.com,*qa1.eucalyptus-systems.com'}
@@ -182,23 +185,56 @@ for cluster_name in topology_parser.get_cluster_names():
         eucalyptus['system-properties'][storage_property_prefix + 'sanpassword'] = 'zoomzoom'
         eucalyptus['system-properties'][storage_property_prefix + 'sanuser'] = 'grpadmin'
         eucalyptus['system-properties'][storage_property_prefix + 'scpaths'] = '10.107.6.1'
+    elif block_storage_mode == 'ceph-rbd':
+        topo_d['topology']['clusters'][cluster_name]['storage-backend'] = 'ceph-rbd'
+        eucalyptus['system-properties'][
+            storage_property_prefix + 'cephkeyringfile'] = '/etc/ceph/ceph.client.qauser.keyring'
+        eucalyptus['system-properties'][storage_property_prefix + 'cephuser'] = 'qauser'
+        eucalyptus['system-properties'][storage_property_prefix + 'cephconfigfile'] = '/etc/ceph/ceph.conf'
+        eucalyptus['system-properties'][storage_property_prefix + 'cephsnapshotpools'] = 'rbd'
+        eucalyptus['system-properties'][storage_property_prefix + 'cephvolumepools'] = 'rbd'
+        topo_d['topology']['clusters'][cluster_name]['ceph_cluster'] = {"ceph_user": "qauser",
+                                                                        "keyring": {
+                                                                            "key": "AQAkAP1TYLICHRAAWON3vIDgMgf6VrsawQmTvQ=="},
+                                                                        "global": {
+                                                                            "osd_pool_default_pgp_num": "128",
+                                                                            "auth_service_required": "cephx",
+                                                                            "osd_pool_default_size": 3,
+                                                                            "filestore_xattr_use_omap": True,
+                                                                            "auth_client_required": "cephx",
+                                                                            "osd_pool_default_pg_num": 128,
+                                                                            "auth_cluster_required": "cephx",
+                                                                            "mon_host": "10.111.5.185",
+                                                                            "mon_initial_members": "g-19-05",
+                                                                            "fsid": "ea4b07ca-ebf9-45a9-be9a-47428b810d84"
+                                                                        },
+                                                                        "mon": {
+                                                                            "mon host": "g-19-05,d-04,d-05",
+                                                                            "mon addr": "10.111.5.185:6789,10.111.5.188:6789,"
+                                                                                        "10.111.5.189:6789"
+                                                                        }}
     else:
         topo_d['topology']['clusters'][cluster_name]['storage-backend'] = 'das'
         topo_d['topology']['clusters'][cluster_name]['das-device'] = 'vg01'
-
 
 repository_mapping = {'testing': {
     'eucalyptus-repo': 'http://packages.release.eucalyptus-systems.com/yum/tags/eucalyptus-devel/centos/6/x86_64/',
     'enterprise-repo': 'http://packages.release.eucalyptus-systems.com/yum/tags/enterprise-devel/centos/6/x86_64/',
     'euca2ools-repo': 'http://packages.release.eucalyptus-systems.com/yum/tags/euca2ools-devel/centos/6/x86_64/'},
                       'maint/4.0/testing': {
-                          'eucalyptus-repo': 'http://packages.release.eucalyptus-systems.com/yum/tags/eucalyptus-4.0/centos/6/x86_64/',
-                          'enterprise-repo': 'http://packages.release.eucalyptus-systems.com/yum/tags/enterprise-4.0/centos/6/x86_64/',
-                          'euca2ools-repo': 'http://packages.release.eucalyptus-systems.com/yum/tags/euca2ools-3.1/centos/6/x86_64/'},
+                          'eucalyptus-repo':
+                              'http://packages.release.eucalyptus-systems.com/yum/tags/eucalyptus-4.0/centos/6/x86_64/',
+                          'enterprise-repo':
+                              'http://packages.release.eucalyptus-systems.com/yum/tags/enterprise-4.0/centos/6/x86_64/',
+                          'euca2ools-repo':
+                              'http://packages.release.eucalyptus-systems.com/yum/tags/euca2ools-3.1/centos/6/x86_64/'},
                       'maint-4.1': {
-                          'eucalyptus-repo': 'http://packages.release.eucalyptus-systems.com/yum/tags/eucalyptus-4.1/centos/6/x86_64/',
-                          'enterprise-repo': 'http://packages.release.eucalyptus-systems.com/yum/tags/enterprise-4.1/centos/6/x86_64/',
-                          'euca2ools-repo': 'http://packages.release.eucalyptus-systems.com/yum/tags/euca2ools-3.2/centos/6/x86_64/'}
+                          'eucalyptus-repo':
+                              'http://packages.release.eucalyptus-systems.com/yum/tags/eucalyptus-4.1/centos/6/x86_64/',
+                          'enterprise-repo':
+                              'http://packages.release.eucalyptus-systems.com/yum/tags/enterprise-4.1/centos/6/x86_64/',
+                          'euca2ools-repo':
+                              'http://packages.release.eucalyptus-systems.com/yum/tags/euca2ools-3.2/centos/6/x86_64/'}
 }
 eucalyptus.update(repository_mapping[euca_source])
 
@@ -215,9 +251,9 @@ if 'EDGE' == network_mode:
                    "PublicIps": edge_pubs}
     for cluster in topology_parser.get_cluster_names():
         cluster_def = {"Subnet": {"Subnet": "10.111.0.0",
-                                            "Netmask": "255.255.0.0",
-                                            "Name": "10.111.0.0",
-                                            "Gateway": "10.111.0.1"},
+                                  "Netmask": "255.255.0.0",
+                                  "Name": "10.111.0.0",
+                                  "Gateway": "10.111.0.1"},
                        "PrivateIps": edge_priv,
                        "Name": cluster}
         config_json["Clusters"].append(cluster_def)
