@@ -103,6 +103,8 @@ def parse_client_topology():
                 check_cluster_definition(machine=machine, component='sc-1', count=count)
             elif component == 'walrus':
                 topology['walrus'] = get_component_ip(machine, count)
+            elif component == 'riakcs':
+                topology['riakcs'] = {}
             elif component == 'ufs':
                 if is_attribute_declared(key="user-facing", some_dict=topology):
                     topology['user-facing'].append(get_component_ip(machine, count))

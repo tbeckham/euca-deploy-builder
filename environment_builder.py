@@ -147,7 +147,7 @@ eucalyptus = {
 }
 default["default_attributes"] = {"eucalyptus": eucalyptus}
 
-### set all the IP info
+# set all the IP info
 set_component_ip_info(topo_d)
 
 for cluster_name in topology_parser.get_cluster_names():
@@ -219,6 +219,17 @@ for cluster_name in topology_parser.get_cluster_names():
         topo_d['topology']['clusters'][cluster_name]['storage-backend'] = 'das'
         topo_d['topology']['clusters'][cluster_name]['das-device'] = 'vg01'
 
+if object_storage_mode == "riakcs":
+    topo_d['topology']['riakcs'] = {
+                              "admin-name": job_id,
+                              "admin-email": job_id + "@euca-qa.com",
+                              "endpoint": "10.111.5.79",
+                              "port": 80,
+                              "access-key": "",
+                              "secret-key": ""
+                          }
+    eucalyptus['system-properties']['objectstorage.dogetputoncopyfail'] = 'true'
+
 repository_mapping = {'testing': {
     'eucalyptus-repo': 'http://packages.release.eucalyptus-systems.com/yum/tags/eucalyptus-devel/centos/6/x86_64/',
     'enterprise-repo': 'http://packages.release.eucalyptus-systems.com/yum/tags/enterprise-devel/centos/6/x86_64/',
@@ -259,7 +270,7 @@ if 'EDGE' == network_mode:
     eucalyptus['network']['nc-router'] = 'N'
     eucalyptus['network']['config-json'] = config_json
 else:
-    ### Managed, Managed-No-VLAN
+    # Managed, Managed-No-VLAN
     eucalyptus['network']['mode'] = network_mode
     eucalyptus['network']['public-interface'] = 'em1'
     eucalyptus['network']['private-interface'] = 'em1'
@@ -268,10 +279,10 @@ else:
         eucalyptus['system-properties']['cloud.network.global_min_network_tag'] = "512"
         eucalyptus['system-properties']['cloud.network.global_max_network_tag'] = "639"
 
-### output env to console
+# output env to console
 print "Generated Environment\n"
 print yaml.dump(merge(user_dict, default), default_flow_style=False)
 
-### write generated euca-deploy yaml to file
+# write generated euca-deploy yaml to file
 write_environment_to_file(yaml_dump=yaml.dump(merge(user_dict, default), default_flow_style=False),
                           outfile=environment_file)
