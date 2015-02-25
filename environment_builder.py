@@ -79,22 +79,21 @@ def set_component_ip_info(some_dict):
         if isinstance(v, dict):
             set_component_ip_info(v)
         else:
-            if (k != "storage-backend") and (k != "das-device"):
-                if k == "nodes":
-                    node_list = v.split(" ")
-                    for i in node_list:
-                        if not is_ip(i):
-                            node_list[node_list.index(i)] = os.getenv(i, "MACHINE")
-                            some_dict[k] = ' '.join(node_list)
-                elif isinstance(v, list):
-                    for i in v:
-                        if not is_ip(i):
-                            new_value = i.replace(i, os.getenv(i, "MACHINE"))
-                            some_dict[k][v.index(i)] = new_value
-                else:
-                    if not is_ip(v):
-                        new_value = v.replace(v, os.getenv(v, "MACHINE"))
-                        some_dict[k] = new_value
+            if k == "nodes":
+                node_list = v.split(" ")
+                for i in node_list:
+                    if not is_ip(i):
+                        node_list[node_list.index(i)] = os.getenv(i, "MACHINE")
+                        some_dict[k] = ' '.join(node_list)
+            elif isinstance(v, list):
+                for i in v:
+                    if not is_ip(i):
+                        new_value = i.replace(i, os.getenv(i, "MACHINE"))
+                        some_dict[k][v.index(i)] = new_value
+            else:
+                if not is_ip(v):
+                    new_value = v.replace(v, os.getenv(v, "MACHINE"))
+                    some_dict[k] = new_value
     return
 
 
@@ -147,6 +146,9 @@ eucalyptus = {
     "system-properties": {'cloudformation.url_domain_whitelist': '*s3.amazonaws.com,*qa1.eucalyptus-systems.com'}
 }
 default["default_attributes"] = {"eucalyptus": eucalyptus}
+
+### set all the IP info
+set_component_ip_info(topo_d)
 
 for cluster_name in topology_parser.get_cluster_names():
     storage_property_prefix = cluster_name + '.storage.'
@@ -237,9 +239,6 @@ repository_mapping = {'testing': {
                               'http://packages.release.eucalyptus-systems.com/yum/tags/euca2ools-3.2/centos/6/x86_64/'}
 }
 eucalyptus.update(repository_mapping[euca_source])
-
-### set all the IP info
-set_component_ip_info(topo_d)
 
 # Setup networking
 if 'EDGE' == network_mode:
