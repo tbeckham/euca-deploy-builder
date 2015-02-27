@@ -141,6 +141,7 @@ eucalyptus = {
     "source-repo": "ssh://repo-euca@git.eucalyptus-systems.com/internal",
     "init-script-url":
         "http://git.qa1.eucalyptus-systems.com/qa-repos/eucalele/raw/master/scripts/network-interfaces.sh",
+    "post-script-url": "http://git.qa1.eucalyptus-systems.com/snippets/7/raw",
     "log-level": "DEBUG",
     "yum-options": "--nogpg",
     "system-properties": {'cloudformation.url_domain_whitelist': '*s3.amazonaws.com,*qa1.eucalyptus-systems.com'}
