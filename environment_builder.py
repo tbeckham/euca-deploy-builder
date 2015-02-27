@@ -269,6 +269,58 @@ if 'EDGE' == network_mode:
         config_json["Clusters"].append(cluster_def)
     eucalyptus['network']['nc-router'] = 'N'
     eucalyptus['network']['config-json'] = config_json
+elif 'VPC' in network_mode:
+    # Setup Midokura config
+    frontend = get_component_ip(component="clc-1", some_dict=topo_d)
+    eucalyptus['network']['mode'] = 'VPCMIDO'
+    machine_1_hostname = socket.gethostbyaddr(frontend)[0]
+    midolman_host_mapping = {machine_1_hostname: frontend}
+    for cluster_name in topology_parser.get_cluster_names():
+        for k, v in topo_d['topology']['clusters'][cluster_name].iteritems():
+            if k == "nodes":
+                node_list = v.split(" ")
+                for node in node_list:
+                    node_hostname = socket.gethostbyaddr(node)[0]
+                    midolman_host_mapping[node_hostname] = node
+    machine_1_octets = frontend.split('.')
+    local_as = 64512 + 255 * int(machine_1_octets[2]) + int(machine_1_octets[3])
+    mido_gw_ip = "10.116." + str(int(machine_1_octets[2]) + 128) + "." + machine_1_octets[3]
+    midokura_config = {'repo-username': 'eucalyptus',
+                       'repo-password': '8yU8Pj6h',
+                       'yum-options': '--nogpg',
+                       'zookeepers': ["{0}:2181".format(frontend)],
+                       'cassandras': ["{0}".format(frontend)],
+                       'initial-tenant': 'euca_tenant_1',
+                       'midonet-api-url': "http://{0}:8080/midonet-api".format(frontend),
+                       'midolman-host-mapping': midolman_host_mapping,
+                       'bgp-peers': [{"router-name": "eucart",
+                                      "port-ip": mido_gw_ip,
+                                      "remote-as": 65000,
+                                      "peer-address": "10.116.133.173",
+                                      "local-as": local_as,
+                                      "route": public_ips + "/24"}]
+    }
+    default['default_attributes']['midokura'] = midokura_config
+    pub_ip_octets = public_ips.split('.')
+    last_pub_ip = pub_ip_octets[0] + '.' + pub_ip_octets[1] + '.' + pub_ip_octets[2] + '.' + '254'
+    # Setup config JSON
+    config_json = {'Mode': 'VPCMIDO',
+                   'PublicIps': [public_ips + '-' + last_pub_ip],
+                   'InstanceDnsServers': [frontend],
+                   # This is the new way to configure MIDO
+                   "Mido": {
+                       "EucanetdHost": machine_1_hostname,
+                       "GatewayHost": machine_1_hostname,
+                       "GatewayIP": mido_gw_ip,
+                       "GatewayInterface": "em1.116",
+                       "PublicNetworkCidr": "10.116.128.0/17",
+                       "PublicGatewayIP": "10.116.133.173"
+                   }
+    }
+    eucalyptus[
+        "post-script-url"] = "http://git.qa1.eucalyptus-systems.com/qa-repos/eucalele/raw/master/scripts/midonet_post.sh"
+    eucalyptus['system-properties']['www.http_port'] = '9999'
+    eucalyptus['network']['config-json'] = config_json
 else:
     # Managed, Managed-No-VLAN
     eucalyptus['network']['mode'] = network_mode
