@@ -286,3 +286,28 @@ print yaml.dump(merge(user_dict, default), default_flow_style=False)
 # write generated euca-deploy yaml to file
 write_environment_to_file(yaml_dump=yaml.dump(merge(user_dict, default), default_flow_style=False),
                           outfile=environment_file)
+
+# write Eutester Config to workspace
+config_data = ''
+config_data = config_data + 'NETWORK\t' + network_mode + '\n'
+config_data = config_data + topo_d['topology']['clc-1'] + '\tCENTOS' + '\t6.5' + '\t64' + '\tREPO' + '\t[CLC]' + '\n'
+if object_storage_mode == "walrus":
+    config_data = config_data + topo_d['topology']['walrus'] + '\tCENTOS' + '\t6.5' + '\t64' + '\tREPO' + '\t[WS]' + '\n'
+
+clusters = 0
+for cluster_name in topo_d['topology']['clusters'].keys():
+    config_data = config_data + topo_d['topology']['clusters'][cluster_name][
+        'cc-1'] + '\tCENTOS' + '\t6.5' + '\t64' + '\tREPO' + '\t[CC0' + str(clusters) + ']' + '\n'
+    config_data = config_data + topo_d['topology']['clusters'][cluster_name][
+        'sc-1'] + '\tCENTOS' + '\t6.5' + '\t64' + '\tREPO' + '\t[SC0' + str(clusters) + ']' + '\n'
+    for k, v in topo_d['topology']['clusters'][cluster_name].iteritems():
+        if k == "nodes":
+            node_list = v.split(" ")
+            for node in node_list:
+                config_data = config_data + node + '\tCENTOS' + '\t6.5' + '\t64' + '\tREPO' + '\t[NC0' + str(clusters) + ']' + '\n'
+    clusters += 1
+
+with open('config_data', 'w') as data:
+    data.write(config_data)
+
+print config_data
