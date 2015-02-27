@@ -272,6 +272,7 @@ if 'EDGE' == network_mode:
 elif 'VPC' in network_mode:
     # Setup Midokura config
     frontend = get_component_ip(component="clc-1", some_dict=topo_d)
+    print "***DEBUG:", frontend
     eucalyptus['network']['mode'] = 'VPCMIDO'
     machine_1_hostname = socket.gethostbyaddr(frontend)[0]
     midolman_host_mapping = {machine_1_hostname: frontend}
