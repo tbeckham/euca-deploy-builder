@@ -121,7 +121,7 @@ def write_environment_to_file(yaml_dump, outfile):
 
 default = {'description': 'Eucalyptus CI Testing',
            'name': job_id,
-           "default_attributes": {"eucalyptus": {}}, "thrift": {'version': '0.9.1'}}
+           "default_attributes": {"eucalyptus": {}}}
 
 # Initialize eucalyptus config hash with defaults
 eucalyptus = {
@@ -144,7 +144,7 @@ eucalyptus = {
     "yum-options": "--nogpg",
     "system-properties": {'cloudformation.url_domain_whitelist': '*s3.amazonaws.com,*qa1.eucalyptus-systems.com'}
 }
-default["default_attributes"] = {"eucalyptus": eucalyptus}
+default["default_attributes"] = {"eucalyptus": eucalyptus, "thrift": {'version': '0.9.1'}}
 
 # set all the IP info
 set_component_ip_info(topo_d)
