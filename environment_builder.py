@@ -229,11 +229,11 @@ if object_storage_mode == "riakcs":
                           }
     eucalyptus['system-properties']['objectstorage.dogetputoncopyfail'] = 'true'
 
-repository_mapping = {'testing': {
+repository_mapping = {'master': {
     'eucalyptus-repo': 'http://packages.release.eucalyptus-systems.com/yum/tags/eucalyptus-devel/centos/6/x86_64/',
     'enterprise-repo': 'http://packages.release.eucalyptus-systems.com/yum/tags/enterprise-devel/centos/6/x86_64/',
     'euca2ools-repo': 'http://packages.release.eucalyptus-systems.com/yum/tags/euca2ools-devel/centos/6/x86_64/'},
-                      'maint/4.0/testing': {
+                      'maint-4.0': {
                           'eucalyptus-repo':
                               'http://packages.release.eucalyptus-systems.com/yum/tags/eucalyptus-4.0/centos/6/x86_64/',
                           'enterprise-repo':
