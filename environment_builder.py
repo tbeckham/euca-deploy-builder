@@ -332,7 +332,7 @@ elif ('MANAGED-NOVLAN' == network_mode) or ('MANAGED' == network_mode):
     config_json = {"InstanceDnsServers": [get_component_ip(component="clc-1", some_dict=topo_d)],
                    "Mode": network_mode,
                    "Clusters": [],
-                   "PublicIps": public_ips}
+                   "PublicIps": public_ips.replace(" ", "").split(',')}
     for cluster in topology_parser.get_cluster_names():
         cluster_def = {"Name": cluster, "MacPrefix": "d0:0d"}
         config_json["Clusters"].append(cluster_def)
