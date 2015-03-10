@@ -256,6 +256,7 @@ if 'EDGE' == network_mode:
     edge_pubs = parsed_public_ips[0:len(parsed_public_ips) / 2]
     edge_priv = parsed_public_ips[len(parsed_public_ips) / 2:len(parsed_public_ips)]
     config_json = {"InstanceDnsServers": [get_component_ip(component="clc-1", some_dict=topo_d)],
+                   "Mode": "EDGE",
                    "Clusters": [],
                    "PublicIps": edge_pubs}
     for cluster in topology_parser.get_cluster_names():
@@ -298,7 +299,7 @@ elif 'VPC' in network_mode:
                                       "peer-address": "10.116.133.173",
                                       "local-as": local_as,
                                       "route": public_ips + "/24"}]
-    }
+                       }
     default['default_attributes']['midokura'] = midokura_config
     pub_ip_octets = public_ips.split('.')
     last_pub_ip = pub_ip_octets[0] + '.' + pub_ip_octets[1] + '.' + pub_ip_octets[2] + '.' + '254'
@@ -315,20 +316,29 @@ elif 'VPC' in network_mode:
                        "PublicNetworkCidr": "10.116.128.0/17",
                        "PublicGatewayIP": "10.116.133.173"
                    }
-    }
+                   }
     eucalyptus[
         "post-script-url"] = "http://git.qa1.eucalyptus-systems.com/qa-repos/eucalele/raw/master/scripts/midonet_post.sh"
     eucalyptus['system-properties']['www.http_port'] = '9999'
     eucalyptus['network']['config-json'] = config_json
-else:
-    # Managed, Managed-No-VLAN
+elif ('MANAGED-NOVLAN' == network_mode) or ('MANAGED' == network_mode):
     eucalyptus['network']['mode'] = network_mode
+    managed_network = {"ManagedSubnet": {"Subnet": "172.16.0.0",
+                                         "Netmask": "255.255.0.0"}}
+    if network_mode == 'MANAGED':
+        managed_network['ManagedSubnet'].update({"MinVlan": "512", "MaxVlan": "639"})
     eucalyptus['network']['public-interface'] = 'em1'
     eucalyptus['network']['private-interface'] = 'em1'
-    eucalyptus['network']['public-ips'] = public_ips
-    if network_mode == 'MANAGED':
-        eucalyptus['system-properties']['cloud.network.global_min_network_tag'] = "512"
-        eucalyptus['system-properties']['cloud.network.global_max_network_tag'] = "639"
+    config_json = {"InstanceDnsServers": [get_component_ip(component="clc-1", some_dict=topo_d)],
+                   "Mode": network_mode,
+                   "Clusters": [],
+                   "PublicIps": public_ips}
+    for cluster in topology_parser.get_cluster_names():
+        cluster_def = {"Name": cluster, "MacPrefix": "d0:0d"}
+        config_json["Clusters"].append(cluster_def)
+        config_json.update(managed_network)
+    eucalyptus['network']['nc-router'] = 'N'
+    eucalyptus['network']['config-json'] = config_json
 
 # output env to console
 print "Generated Environment\n"
