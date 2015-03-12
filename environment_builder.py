@@ -319,7 +319,6 @@ elif 'VPC' in network_mode:
                    }
     eucalyptus[
         "post-script-url"] = "http://git.qa1.eucalyptus-systems.com/qa-repos/eucalele/raw/master/scripts/midonet_post.sh"
-    eucalyptus['system-properties']['www.http_port'] = '9999'
     eucalyptus['network']['config-json'] = config_json
 elif ('MANAGED-NOVLAN' == network_mode) or ('MANAGED' == network_mode):
     eucalyptus['network']['mode'] = network_mode
